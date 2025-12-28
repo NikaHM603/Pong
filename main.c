@@ -345,7 +345,29 @@ const int max_nizov = 4; // 4 nizi
 
  };
 
+	coord_t joystick_raw={0,0}, joystick_new={0,0}, joystick_prev={0,0};
+	joystick_t joystick;
+	char MSG[100]={0};
+	uint16_t touch_x = 0, touch_y = 0;
 
+	char str[50];
+	float bitrate;
+
+ //LEVA PLOSCICA
+
+   	  //int paddle_x_leva = 20;
+   	  //int paddle_y_leva = 90; // Sredina zaslona: 240/2 - 60/2 = 90
+   	  //UG_FillFrame(paddle_x_leva, paddle_y_leva, paddle_x_leva + paddle_width - 1, paddle_y_leva + paddle_height - 1, C_WHITE); // LEVA ploščica: (20, 90), (29, 149)
+
+ //DESNA PLOSCICA
+
+   	  //int paddle_x_desna = pong_width - paddle_width - 20;
+   	  //int paddle_y_desna = 90;
+   	  //UG_FillFrame(paddle_x_desna, paddle_y_desna, paddle_x_desna + paddle_width - 1, paddle_y_desna + paddle_height - 1, C_WHITE); // DESNA ploščica: (), ()299, 149
+
+ // ŽOGICA
+   	  //uint8_t zogica = 90;
+   	  //UG_FillCircle(160, 120, 5, C_WHITE ); // x, y, radij, barva
 
 /* USER CODE END PV */
 
@@ -353,7 +375,7 @@ const int max_nizov = 4; // 4 nizi
 void SystemClock_Config(void);
 void zogica_narisi(void);
 int zogica_reset(void);
-int preveri_zmago(void);
+_Bool preveri_zmago(void);
 float narisi_score(void);
 void povecaj_score(int igralec);
 void score_reset(void);
@@ -363,6 +385,7 @@ void povecaj_score(int igralec);
 void Popravi_Ozadje_Pravokotnik(int16_t x, int16_t y, int16_t w, int16_t h);
 void Narisi_Zacetni_Meni(int izbrana_opcija);
 void narisi_paddle(void);
+void paddle_update(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -381,13 +404,7 @@ void narisi_paddle(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	coord_t joystick_raw={0,0}, joystick_new={0,0}, joystick_prev={0,0};
-		joystick_t joystick;
-		char MSG[100]={0};
-		uint16_t touch_x = 0, touch_y = 0;
 
-		char str[50];
-		float bitrate;
 
 
   /* USER CODE END 1 */
@@ -470,59 +487,50 @@ int main(void)
 
 
   //---------------------------------------------SKICE---------------------------------------------------------------
+  Title_screen_narisi();
+  //Narisi_Zacetni_Meni(0);
 
-  Narisi_Zacetni_Meni(0);
+  	  //while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_SET){}
 
-  	  while(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_15) == GPIO_PIN_SET){}
 
-//LEVA PLOSCICA
 
-  	  int paddle_x_leva = 20;
-  	  int paddle_y_leva = 90; // Sredina zaslona: 240/2 - 60/2 = 90
-  	  UG_FillFrame(paddle_x_leva, paddle_y_leva, paddle_x_leva + paddle_width - 1, paddle_y_leva + paddle_height - 1, C_WHITE); // LEVA ploščica: (20, 90), (29, 149)
-
-//DESNA PLOSCICA
-
-  	  int paddle_x_desna = pong_width - paddle_width - 20;
-  	  int paddle_y_desna = 90;
-  	  UG_FillFrame(paddle_x_desna, paddle_y_desna, paddle_x_desna + paddle_width - 1, paddle_y_desna + paddle_height - 1, C_WHITE); // DESNA ploščica: (), ()299, 149
-
-// ŽOGICA
-uint8_t zogica = 90;
-  	  UG_FillCircle(160, 120, 5, C_WHITE ); // x, y, radij, barva
-
-  	  zogica_reset();
-  	  narisi_score();
+  	  //zogica_reset();
+  	  //narisi_score();
+  	  //narisi_sredino();
 
 //-------------------------------------------------------------------------------------------------------------------
 
   	/* USER CODE BEGIN 2 */
-  	  LCD_Init();
-  	  LCD_UG_init();
+  	  //LCD_Init();
+  	  //LCD_UG_init();
   	  joystick_init(&joystick);
   	  HAL_ADC_Start_DMA(&hadc4, &joystick_raw, 2);
 
-  	  
+
   	// 0 = Title, 1 = Glavni Meni, 2 = Igra
-  	  int meni_stanje = 0; 
-  	  int izbrana_opcija = 0;
+  	  uint8_t meni_stanje = 0;
+  	  uint8_t izbrana_opcija = 0;
 
 
   	  while (1) {
-  		  
+
   		  // STANJE 0: TITLE SCREEN + PRVA IZBIRA
   		  if (meni_stanje == 0) {
   			  // Takoj narišemo meni čez sliko
   			  Narisi_Zacetni_Meni(izbrana_opcija);
 
   			  // Čakamo na OK, da potrdimo prvo izbiro (npr. START GAME)
-  			  if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET) {
-  				  if (izbrana_opcija == 0) {
+  			  if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET)
+  			  {
+  				  if (izbrana_opcija == 0)
+  				  {
   					  meni_stanje = 2; // Gremo direktno v IGRO
 
-  	            } else {
+				  }
+  				  else
+  				  {
   	                meni_stanje = 1; // Gremo v PODMENI (ki ga še ni)
-  	            }
+  				  }
 
   	            HAL_Delay(20);
 
@@ -531,17 +539,19 @@ uint8_t zogica = 90;
   	            if (meni_stanje == 2)
   	            UG_FillFrame(0, 0, 319, 239, C_BLACK);
   	            */
-  	            
+
   			  }
 
   	// PREMIKANJE PO MENIJU
-  			  
+
   	        if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET) {
-  	            izbrana_opcija = (izbrana_opcija > 0) ? izbrana_opcija - 1 : 1;
+  	        	while(HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET){}
+  	        	izbrana_opcija = (izbrana_opcija > 0) ? izbrana_opcija - 1 : 1;
   	            Narisi_Zacetni_Meni(izbrana_opcija);
   	            HAL_Delay(50);
   	        }
   	        if (HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET) {
+  	        	while(HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET){}
   	            izbrana_opcija = (izbrana_opcija < 1) ? izbrana_opcija + 1 : 0;
   	            Narisi_Zacetni_Meni(izbrana_opcija);
   	            HAL_Delay(50);
@@ -549,12 +559,12 @@ uint8_t zogica = 90;
   	    }
 
   // STANJE 1: PODMENI (IGRALCI / TEŽAVNOST)
-  		  
+
   	    if (meni_stanje == 1) {
-  	    	
+
   	        // Tukaj bom kasneje dodala izris za nastavitve
   	        // Za zdej se vrnemo nazaj na Title s tipko OK
-  	    	
+
   	        if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET) {
   	            meni_stanje = 0;
   	            HAL_Delay(200);
@@ -562,91 +572,44 @@ uint8_t zogica = 90;
   	    }
 
   // STANJE 2: IGRA
-  	    
+
   	    if (meni_stanje == 2) {
+    	      UG_FillFrame(0, 0, 319, 239, C_BLACK);
+    	      narisi_score();
+    	      narisi_paddle();
+    	      narisi_sredino();
+    	      zogica_reset(); // tuki notr se že nariše sredina
 
-  	      UG_FillFrame(0, 0, 319, 239, C_BLACK);
-  	      narisi_score();
-  	      narisi_paddle();
-  	      zogica_reset(); // tuki notr se že nariše sredina
+    	      HAL_Delay(1000);
 
-  	      
-  	    // ---------- LEVA PLOŠČICA (JOYSTICK) ----------
-  	    joystick_get(&joystick_raw, &joystick_new, &joystick);
-  	    int old_y_leva = paddle_y_leva;
+    	      while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) != GPIO_PIN_RESET) {}
 
-  	      	  if (joystick_new.y < -40) paddle_y_leva -= paddle_speed;
-  	      	  if (joystick_new.y >  40) paddle_y_leva += paddle_speed;
+    	      //while loop, dejanska igra :)
+    	      while(!preveri_zmago()){  // Izvaja se, dokler ni igre konec
+  	    		paddle_update();
+  	    		narisi_score();
+  	    		narisi_sredino();
+				zogica_narisi();
+				HAL_Delay(20);
 
-  	      	  // Omeji Y LEVE ploščice
-  	      	  if (paddle_y_leva < 0) paddle_y_leva = 0; //Preprečimo izhod žogice zgoraj
-  	      	  if (paddle_y_leva > pong_height - paddle_height) paddle_y_leva = pong_height - paddle_height; //Preprecimo izhod zogice spodaj
+  	    }
+    	      meni_stanje=0;
+  	    }
 
-  	      	  
-  	      	  // Če se je Y spremenil, izbriši staro in nariši novo ploščico
-  	      	  if (old_y_leva != paddle_y_leva) //Ploščico pobrišeš in ponovno narišeš, če se je premaknila
-  	      	  {
-  	      		  UG_FillFrame(paddle_x_leva, old_y_leva, paddle_x_leva + paddle_width - 1, old_y_leva + paddle_height - 1, C_BLACK);
-  	      		  //Popravi_Ozadje_Pravokotnik(paddle_x_leva, old_y_leva, paddle_width, paddle_height); <-- To pride v poštev, ko bom mela sliko na ozadju med actual igro
-  	      	      UG_FillFrame(paddle_x_leva, paddle_y_leva, paddle_x_leva + paddle_width - 1, paddle_y_leva + paddle_height - 1, C_WHITE);
-  	      	  }
-
-  	      	  // ODBOJ OD L
-  	      	  if (zogica_x - zogica_size <= (paddle_x_leva + paddle_width))
-  	      	  {
-  	      	      // Preverimo še, če je žogica po Y med vrhom in dnom ploščice
-  	      	      if (zogica_y >= paddle_y_leva && zogica_y <= (paddle_y_leva + paddle_height))
-  	      	      {
-  	      	          zogica_dx = -zogica_dx;  // Obrni smer v desno
-  	      	          zogica_x = (paddle_x_leva + paddle_width) + zogica_size; // Prepreči "zatikanje" žogice v ploščici
-  	      	      }
-  	      	  }
-
-  	      // ---------- DESNA PLOŠČICA (TIPKE) ----------
-  	      int old_y_desna = paddle_y_desna;
-
-  	      	  if (!HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin)) //če je pritisnjeno, vrne 0, negacija ! pa to spremeni v "resnično"
-  	      	      paddle_y_desna -= paddle_speed; // premik ploščice navzgor
-
-  	      	  if (!HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin))
-  	      	      paddle_y_desna += paddle_speed; // premik ploscice navzdol
-
-  	      	  // Omeji Y DESNE ploščice
-  	      	  if (paddle_y_desna < 0)
-  	      	      paddle_y_desna = 0;
-  	      	  else if (paddle_y_desna > pong_height - paddle_height)
-  	      	      paddle_y_desna = pong_height - paddle_height;
-
-  	      	  // Če se je Y spremenil, izbriši staro in nariši novo ploščico
-  	      	  if (old_y_desna != paddle_y_desna)
-  	      	  {
-  	      	      UG_FillFrame(paddle_x_desna, old_y_desna, paddle_x_desna + paddle_width - 1, old_y_desna + paddle_height - 1, C_BLACK);
-  	      	      //Popravi_Ozadje_Pravokotnik(paddle_x_desna, old_y_desna, paddle_width, paddle_height); <-- To pride v poštev, ko bom mela sliko na ozadju med actual igro
-  	      	      UG_FillFrame(paddle_x_desna, paddle_y_desna, paddle_x_desna + paddle_width - 1, paddle_y_desna + paddle_height - 1, C_WHITE);
-  	      	  }
-
-  	      	  // Preverimo, če je žogica po X prišla do desne ploščice (x = 290)
-  	      	  if (zogica_x + zogica_size >= paddle_x_desna)
-  	      	  {
-  	      	      // Preverimo še, če je žogica po Y med vrhom in dnom ploščice
-  	      	      if (zogica_y >= paddle_y_desna && zogica_y <= (paddle_y_desna + paddle_height))
-  	      	      {
-  	      	          zogica_dx = -zogica_dx;  // Obrni smer v levo
-  	      	          zogica_x = paddle_x_desna - zogica_size; // Prepreči "zatikanje"
-  	      	      }
-  	      	  }
 
   	      	     HAL_Delay(20);
   	      	   }
 
   	    }
-  	  
+
 
   // ------------------------------------------------------------------------------
   // Čakaj, da uporabnik pritisne tipko OK (PC15, kot v tvoji funkciji zogica_reset)
   // Dodamo še preprosto utripanje besedila "PRITISNI OK"
-  	  
-  	  uint32_t last_blink = HAL_GetTick();
+
+
+/*
+	  uint32_t last_blink = HAL_GetTick();
   	  uint8_t text_visible = 1;
 
 
@@ -672,17 +635,13 @@ uint8_t zogica = 90;
 
   	  HAL_Delay(20);
 
-
+*/
   	  /* USER CODE END 2 */
 
-
- while(1) {
-
- }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-}
+
 
 	  //LEDs and KEYs
 //	 HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, !HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin));
@@ -773,22 +732,22 @@ void narisi_sredino(void) {
 //-----------------------------------------------------------------------------------------------
 
 void zogica_narisi(void) {  // ta stvar mal čudn deluje
-	
-	
+
+
     // 1. POBRIŠI staro žogico
     UG_FillCircle((int16_t)zogica_x, (int16_t)zogica_y, zogica_size, C_BLACK);
 	//Popravi_Ozadje((int16_t)zogica_x, (int16_t)zogica_y, zogica_size);
 
-    narisi_sredino();
+    //narisi_sredino();
     //if (zogica_y < 50)
-    narisi_score();
+    //narisi_score();
 
     // 3. PREMIK
     zogica_x += zogica_dx;
     zogica_y += zogica_dy;
 
     // 4. LOGIKA ODBOJEV (Z deltami)
-    float delta = 1.0f;
+    float delta = 1.0;
 
     // Odboj od sten (zgoraj/spodaj)
     if(zogica_y <= zogica_size || zogica_y >= (240 - zogica_size)){
@@ -824,8 +783,8 @@ int zogica_reset(void) {
 	zogica_x = 160.0f;
 	zogica_y = 120.0f;
 
-	narisi_score();
-	narisi_sredino();
+	//narisi_score();
+	//narisi_sredino();
 
 	UG_FillCircle(160, 120, 5, C_WHITE);
 
@@ -847,8 +806,8 @@ int zogica_reset(void) {
 // To pride v poštev, ko bom hotla met realno sliko za ozadje med actual igro
 // in bo mogl dorisovat sliko ob premikanju paddle-ov
 
-void Popravi_Ozadje_Pravokotnik(int16_t x, int16_t y, int16_t w, int16_t h) {  
-    for (int16_t v = y; v < y + h; v++) {									 
+void Popravi_Ozadje_Pravokotnik(int16_t x, int16_t y, int16_t w, int16_t h) {
+    for (int16_t v = y; v < y + h; v++) {
         for (int16_t s = x; s < x + w; s++) {
             if (s >= 0 && s < 320 && v >= 0 && v < 240) {
                 uint32_t idx = (v * 320 + s) * 2;
@@ -859,9 +818,10 @@ void Popravi_Ozadje_Pravokotnik(int16_t x, int16_t y, int16_t w, int16_t h) {
 }
 //-----------------------------------------------------------------------------------------------
 
-int preveri_zmago(void) {
+_Bool preveri_zmago(void) {
     // Ta funkcija vrne 1, če je nekdo dosegel 5 točk (rezultat 4)
     if (score_L > 3 || score_D > 3) {
+    	//UG_PutString();  // za winnerja
         return 1; // Konec iteracije!
     }
     return 0; // Igra se nadaljuje
@@ -904,14 +864,20 @@ void povecaj_score(int igralec) {
 	if (nizi_L >= max_nizov || nizi_D >= max_nizov) {
 		nizi_L = 0;
 		nizi_D = 0;
-		
+
 		// Tukaj pride utripanje luck
 	}
 
 	HAL_Delay(1000);
 	}
-	narisi_score();
-	zogica_reset();
+
+    UG_FillFrame(0, 0, 319, 239, C_BLACK);
+    narisi_score();
+    narisi_paddle();
+    narisi_sredino();
+    zogica_reset(); // tuki notr se že nariše sredina
+
+	//zogica_reset();
 
 }
 //-----------------------------------------------------------------------------------------------
@@ -925,8 +891,80 @@ void score_reset(void) {
 
 		HAL_Delay(500);
 
-		zogica_reset();
+		//zogica_reset();
 	}
+}
+
+
+
+void paddle_update(void)
+{
+
+	    // ---------- LEVA PLOŠČICA (JOYSTICK) ----------
+	    joystick_get(&joystick_raw, &joystick_new, &joystick);
+	    int old_y_leva = paddle_y_leva;
+
+	      	  if (joystick_new.y < -40) paddle_y_leva -= paddle_speed;
+	      	  if (joystick_new.y >  40) paddle_y_leva += paddle_speed;
+
+	      	  // Omeji Y LEVE ploščice
+	      	  if (paddle_y_leva < 0) paddle_y_leva = 0; //Preprečimo izhod žogice zgoraj
+	      	  if (paddle_y_leva > pong_height - paddle_height) paddle_y_leva = pong_height - paddle_height; //Preprecimo izhod zogice spodaj
+
+
+	      	  // Če se je Y spremenil, izbriši staro in nariši novo ploščico
+	      	  if (old_y_leva != paddle_y_leva) //Ploščico pobrišeš in ponovno narišeš, če se je premaknila
+	      	  {
+	      		  UG_FillFrame(paddle_x_leva, old_y_leva, paddle_x_leva + paddle_width - 1, old_y_leva + paddle_height - 1, C_BLACK);
+	      		  //Popravi_Ozadje_Pravokotnik(paddle_x_leva, old_y_leva, paddle_width, paddle_height); <-- To pride v poštev, ko bom mela sliko na ozadju med actual igro
+	      	      UG_FillFrame(paddle_x_leva, paddle_y_leva, paddle_x_leva + paddle_width - 1, paddle_y_leva + paddle_height - 1, C_WHITE);
+	      	  }
+
+	      	  // ODBOJ OD L
+	      	  if (zogica_x - zogica_size <= (paddle_x_leva + paddle_width))
+	      	  {
+	      	      // Preverimo še, če je žogica po Y med vrhom in dnom ploščice
+	      	      if (zogica_y >= paddle_y_leva && zogica_y <= (paddle_y_leva + paddle_height))
+	      	      {
+	      	          zogica_dx = -zogica_dx;  // Obrni smer v desno
+	      	          zogica_x = (paddle_x_leva + paddle_width) + zogica_size; // Prepreči "zatikanje" žogice v ploščici
+	      	      }
+	      	  }
+
+	      // ---------- DESNA PLOŠČICA (TIPKE) ----------
+	      int old_y_desna = paddle_y_desna;
+
+	      	  if (!HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin)) //če je pritisnjeno, vrne 0, negacija ! pa to spremeni v "resnično"
+	      	      paddle_y_desna -= paddle_speed; // premik ploščice navzgor
+
+	      	  if (!HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin))
+	      	      paddle_y_desna += paddle_speed; // premik ploscice navzdol
+
+	      	  // Omeji Y DESNE ploščice
+	      	  if (paddle_y_desna < 0)
+	      	      paddle_y_desna = 0;
+	      	  else if (paddle_y_desna > pong_height - paddle_height)
+	      	      paddle_y_desna = pong_height - paddle_height;
+
+	      	  // Če se je Y spremenil, izbriši staro in nariši novo ploščico
+	      	  if (old_y_desna != paddle_y_desna)
+	      	  {
+	      	      UG_FillFrame(paddle_x_desna, old_y_desna, paddle_x_desna + paddle_width - 1, old_y_desna + paddle_height - 1, C_BLACK);
+	      	      //Popravi_Ozadje_Pravokotnik(paddle_x_desna, old_y_desna, paddle_width, paddle_height); <-- To pride v poštev, ko bom mela sliko na ozadju med actual igro
+	      	      UG_FillFrame(paddle_x_desna, paddle_y_desna, paddle_x_desna + paddle_width - 1, paddle_y_desna + paddle_height - 1, C_WHITE);
+	      	  }
+
+	      	  // ODBOJ OD D
+	      	  // Preverimo, če je žogica po X prišla do desne ploščice (x = 290)
+	      	  if (zogica_x + zogica_size >= paddle_x_desna)
+	      	  {
+	      	      // Preverimo še, če je žogica po Y med vrhom in dnom ploščice
+	      	      if (zogica_y >= paddle_y_desna && zogica_y <= (paddle_y_desna + paddle_height))
+	      	      {
+	      	          zogica_dx = -zogica_dx;  // Obrni smer v levo
+	      	          zogica_x = paddle_x_desna - zogica_size; // Prepreči "zatikanje"
+	      	      }
+	      	  }
 }
 //-----------------------------------------------------------------------------------------------
 
@@ -943,7 +981,7 @@ void Title_screen_narisi()
   	  		uint8_t byte1 = moja_slika[index];
   	  		uint8_t byte2 = moja_slika[index + 1];
 
-  	  		// Ročno sestavljen 16-bitni piksel 
+  	  		// Ročno sestavljen 16-bitni piksel
   	  		uint16_t piksel = (byte1 << 8) | byte2;  // Prvi bajt premaknemo za 8 mest v levo, da postane "zgornji" del 16-bitnega števila,
   	  												 // z ALI pa dodamo drugi bajt na prazna mesta na desni -> rezultat: popolno 16-bitno število/barva
 
@@ -960,7 +998,7 @@ void Popravi_Ozadje(int16_t x, int16_t y, int16_t r)
 {
     // Izračunamo kvadratno območje okoli kroga (žogice)
     // r je radij žogice, dodamo +1 za varnost
-	
+
     int16_t x_start = x - r - 1;
     int16_t y_start = y - r - 1;
     int16_t dimenzija = (r * 2) + 3;
@@ -986,7 +1024,7 @@ void Popravi_Ozadje(int16_t x, int16_t y, int16_t r)
 
 void Narisi_Zacetni_Meni(int izbrana_opcija) {
 
-    Title_screen_narisi(); //Nariše celo ozadje
+    //Title_screen_narisi(); //Nariše celo ozadje
 
     //Nastavitve teksta
     UG_FontSelect(&FONT_16X26);
@@ -1002,6 +1040,7 @@ void Narisi_Zacetni_Meni(int izbrana_opcija) {
 
     // Opcija 0: START GAME
         if (izbrana_opcija == 0) {
+        	UG_SetBackcolor(C_RED);
             UG_SetForecolor(C_YELLOW); // Izbrana barva
         } else {
             UG_SetForecolor(C_WHITE);  // Navadna barva
@@ -1011,6 +1050,7 @@ void Narisi_Zacetni_Meni(int izbrana_opcija) {
         // Opcija 1: MENU
         if (izbrana_opcija == 1) {
             UG_SetForecolor(C_YELLOW); // Izbrana barva
+            UG_SetBackcolor(C_RED);
         } else {
             UG_SetForecolor(C_WHITE);  // Navadna barva
         }
