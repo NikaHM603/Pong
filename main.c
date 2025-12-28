@@ -70,6 +70,8 @@
 
 /* USER CODE BEGIN PV */
 
+float zogica_hitrost = 2.0; // prvotna hitrost zogice (torej za easy level)
+
 float zogica_x = 160.0f;
 float zogica_y = 120.0f;
 float zogica_dx = 2.0f;
@@ -383,9 +385,12 @@ void Title_screen_narisi();
 void Popravi_Ozadje(int16_t x, int16_t y, int16_t r);
 void povecaj_score(int igralec);
 void Popravi_Ozadje_Pravokotnik(int16_t x, int16_t y, int16_t w, int16_t h);
-void Narisi_Zacetni_Meni(int izbrana_opcija);
+void Narisi_Zacetni_Meni(uint8_t izbrana_opcija);
 void narisi_paddle(void);
 void paddle_update(void);
+void Podmeni(uint8_t izbrana_opcija);
+void Podmeni_players(uint8_t izbrana_opcija);
+void Podmeni_levels(uint8_t izbrana_opcija);
 
 /* USER CODE BEGIN PFP */
 
@@ -514,7 +519,12 @@ int main(void)
 
   	  while (1) {
 
-  		  // STANJE 0: TITLE SCREEN + PRVA IZBIRA
+  // STANJE 0: TITLE SCREEN + PRVA IZBIRA
+  // Izbrana opcija: 0 - start game
+  //
+  // Meni stanje:    2 - nastavitev igre
+  //   				 1 - nastavitev podmenija
+
   		  if (meni_stanje == 0) {
   			  // Takoj narišemo meni čez sliko
   			  Narisi_Zacetni_Meni(izbrana_opcija);
@@ -559,17 +569,101 @@ int main(void)
   	    }
 
   // STANJE 1: PODMENI (IGRALCI / TEŽAVNOST)
+  // Izbrana opcija: 2 - players
+  //
+  // Meni stanje:    3 - nastavitev podmeni_players
+  //   				 4 - nastavitev podmeni_levels
 
   	    if (meni_stanje == 1) {
 
-  	        // Tukaj bom kasneje dodala izris za nastavitve
-  	        // Za zdej se vrnemo nazaj na Title s tipko OK
+  	    	Podmeni(izbrana_opcija);
+
+  	    	if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET)
+  	    	{while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
+  	    		if(izbrana_opcija == 2) { //"players"
+
+  	    			meni_stanje = 3; // Gremo v podmeni_players
+  	    		}
+  	    		else
+  	    		{
+  	    			meni_stanje = 4; // Gremo v podmeni_levels
+
+  	    		}
+
+  	    		 HAL_Delay(20);
+
+  	    	}
+
 
   	        if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET) {
+  	        	while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
   	            meni_stanje = 0;
   	            HAL_Delay(200);
   	        }
-  	    }
+
+
+  // STANJE 3: PODMENI PLAYERS
+  // Izbrana opcija: 4 - 2 players
+  //
+  // Meni stanje:    5 - nastavitev dveh igralcev
+  //   				 6 - nastavitev AI
+
+  	        if (meni_stanje == 3)
+  	        {
+  	        	Podmeni_players(izbrana_opcija);
+
+  	        	if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET)
+  	        	{while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
+  	        		if(izbrana_opcija == 4) { //2 players
+
+  	        			meni_stanje = 5; // Pojdi v funkcijo, kjer nastavi dva igralca
+
+  	        	  	}
+  	        		else
+  	        	  	{
+  	        	  		meni_stanje = 6; // Pojdi v funkcijo, kjer nastavi AI
+  	        	  	}
+
+  	        	HAL_Delay(20);
+
+  	        	}
+  	        }
+
+
+  // STANJE 4: PODMENI LEVELS
+  // Izbrana opcija: 6 - easy
+  //	         	 7 - medium
+  //				 8 - hard
+  //
+  // Meni stanje:    7 - nastavitev na easy
+  //   				 8 - nastavitev na medium
+  //   				 9 - nastavitev na hard
+
+
+  	      if (meni_stanje == 4)
+  	      {
+  	    	Podmeni_levels(izbrana_opcija);
+
+  	    	if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET)
+  	    	{while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
+  	    	  	 if(izbrana_opcija== 6) { //easy
+
+  	    	  	     meni_stanje = 7; // Pojdi v funkcijo, kjer nastavi na easy (min. hitrost zoge)
+
+  	    	  	 }
+  	    	  	 else if(izbrana_opcija == 7) // medium
+  	    	  	 {
+  	    	  		 meni_stanje = 8; // Pojdi v funkcijo, kjer nastavi na easy (mid. hitrost zoge)
+  	    	  	 }
+  	    	  	 else
+  	    	  	 {
+  	    	  		 meni_stanje = 9; // Pojdi v funkcijo, kjer nastavi na easy (max. hitrost zoge)
+  	    	  	 }
+
+  	    	  	 HAL_Delay(20);
+
+  	    	  }
+  	    	}
 
   // STANJE 2: IGRA
 
@@ -601,7 +695,7 @@ int main(void)
   	      	   }
 
   	    }
-
+}
 
   // ------------------------------------------------------------------------------
   // Čakaj, da uporabnik pritisne tipko OK (PC15, kot v tvoji funkciji zogica_reset)
@@ -894,8 +988,7 @@ void score_reset(void) {
 		//zogica_reset();
 	}
 }
-
-
+//-----------------------------------------------------------------------------------------------
 
 void paddle_update(void)
 {
@@ -1022,7 +1115,7 @@ void Popravi_Ozadje(int16_t x, int16_t y, int16_t r)
 }
 //-----------------------------------------------------------------------------------------------
 
-void Narisi_Zacetni_Meni(int izbrana_opcija) {
+void Narisi_Zacetni_Meni(uint8_t izbrana_opcija) {
 
     //Title_screen_narisi(); //Nariše celo ozadje
 
@@ -1056,9 +1149,118 @@ void Narisi_Zacetni_Meni(int izbrana_opcija) {
         }
         UG_PutString(x2, 140, "MENU");
     }
+//-----------------------------------------------------------------------------------------------
+
+void Podmeni(uint8_t izbrana_opcija) {
+	 //Nastavitve teksta
+	    UG_FontSelect(&FONT_16X26);
+	    UG_FontSetHSpace(0); // Za vsak primer
+	    UG_FontSetVSpace(0);
+
+	    char* opt1 = "PLAYERS";
+	    char* opt2 = "LEVEL";
+
+	    int x1 = (320 - (10 * 16)) / 2;
+	    int x2 = (320 - (4 * 16)) / 2;
+
+	    // Opcija 0: START GAME
+	            if (izbrana_opcija == 2) {
+	            	UG_SetBackcolor(C_RED);
+	                UG_SetForecolor(C_YELLOW); // Izbrana barva
+	            } else {
+	                UG_SetForecolor(C_WHITE);  // Navadna barva
+	            }
+	            UG_PutString(x1, 100, "PLAYERS");
+
+	            // Opcija 1: MENU
+	            if (izbrana_opcija == 3) {
+	                UG_SetForecolor(C_YELLOW); // Izbrana barva
+	                UG_SetBackcolor(C_RED);
+	            } else {
+	                UG_SetForecolor(C_WHITE);  // Navadna barva
+	            }
+	            UG_PutString(x2, 140, "LEVEL");
+	        }
 
 //-----------------------------------------------------------------------------------------------
 
+void Podmeni_players(uint8_t izbrana_opcija) {
+
+	UG_FontSelect(&FONT_16X26);
+	UG_FontSetHSpace(0); // Za vsak primer
+	UG_FontSetVSpace(0);
+
+	char* opt1 = "2 PLAYERS";
+	char* opt2 = "SINGLE PLAYER";
+
+	int x1 = (320 - (10 * 16)) / 2;
+	int x2 = (320 - (4 * 16)) / 2;
+
+	// Opcija 0: 2 PLAYERS
+	        if (izbrana_opcija == 4) {
+	        	UG_SetBackcolor(C_RED);
+	            UG_SetForecolor(C_YELLOW); // Izbrana barva
+	        } else {
+	            UG_SetForecolor(C_WHITE);  // Navadna barva
+	        }
+	        UG_PutString(x1, 100, "2 PLAYERS");
+
+	        // Opcija 1: SINGLE PLAYER
+	        if (izbrana_opcija == 5) {
+	            UG_SetForecolor(C_YELLOW); // Izbrana barva
+	            UG_SetBackcolor(C_RED);
+	        } else {
+	            UG_SetForecolor(C_WHITE);  // Navadna barva
+	        }
+	        UG_PutString(x2, 140, "SINGLE PLAYER");
+	    }
+
+//-----------------------------------------------------------------------------------------------
+
+void Podmeni_levels(uint8_t izbrana_opcija) {
+
+	UG_FontSelect(&FONT_16X26);
+	UG_FontSetHSpace(0); // Za vsak primer
+	UG_FontSetVSpace(0);
+
+	char* opt1 = "EASY";
+	char* opt2 = "MEDIUM";
+	char* opt3 = "HARD";
+
+	// Treba razdelit na 3 segmente  (vse skp premaknt višji)
+	int x1 = (320 - (10 * 16)) / 2;
+	int x2 = (320 - (4 * 16)) / 2;
+	int x3 = (320 - (4 * 16)) / 2;
+
+			// Opcija 0: EASY
+	        if (izbrana_opcija == 6) {
+	        	UG_SetBackcolor(C_RED);
+	            UG_SetForecolor(C_YELLOW); // Izbrana barva
+	        } else {
+	            UG_SetForecolor(C_WHITE);  // Navadna barva
+	        }
+	        UG_PutString(x1, 100, "EASY");
+
+	        // Opcija 1: MEDIUM
+	        if (izbrana_opcija == 7) {
+	            UG_SetForecolor(C_YELLOW); // Izbrana barva
+	            UG_SetBackcolor(C_RED);
+	        } else {
+	            UG_SetForecolor(C_WHITE);  // Navadna barva
+	        }
+	        UG_PutString(x2, 140, "MEDIUM");
+
+
+			// Opcija 2: HARD
+	        if (izbrana_opcija == 8) {
+	            UG_SetForecolor(C_YELLOW); // Izbrana barva
+	            UG_SetBackcolor(C_RED);
+	        } else {
+	            UG_SetForecolor(C_WHITE);  // Navadna barva
+	        }
+	        UG_PutString(x3, 140, "HARD");
+	    }
+//-----------------------------------------------------------------------------------------------
 
 /**
   * @brief  This function is executed in case of error occurrence.
