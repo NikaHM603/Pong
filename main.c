@@ -70,7 +70,7 @@
 
 /* USER CODE BEGIN PV */
 
-float zogica_hitrost = 2.0; // prvotna hitrost zogice (torej za easy level)
+float zogica_hitrost = 1.0;
 
 float zogica_x = 160.0f;
 float zogica_y = 120.0f;
@@ -97,6 +97,11 @@ uint8_t nizi_D = 0;
 
 const int max_tock_na_niz = 3; // 4 tocke na niz
 const int max_nizov = 4; // 4 nizi
+
+// 0 = Title, 1 = Glavni Meni, 2 = Igra
+uint8_t meni_stanje = 0;
+uint8_t izbrana_opcija = 0;
+
 
 
 //link za pretvorbo fotk: https://www.digole.com/tools/PicturetoC_Hex_converter.php
@@ -391,6 +396,7 @@ void paddle_update(void);
 void Podmeni(uint8_t izbrana_opcija);
 void Podmeni_players(uint8_t izbrana_opcija);
 void Podmeni_levels(uint8_t izbrana_opcija);
+void premikanje_po_meniju(uint8_t min, uint8_t max);
 
 /* USER CODE BEGIN PFP */
 
@@ -512,9 +518,6 @@ int main(void)
   	  HAL_ADC_Start_DMA(&hadc4, &joystick_raw, 2);
 
 
-  	// 0 = Title, 1 = Glavni Meni, 2 = Igra
-  	  uint8_t meni_stanje = 0;
-  	  uint8_t izbrana_opcija = 0;
 
 
   	  while (1) {
@@ -525,47 +528,18 @@ int main(void)
   // Meni stanje:    2 - nastavitev igre
   //   				 1 - nastavitev podmenija
 
-  		  if (meni_stanje == 0) {
-  			  // Takoj narišemo meni čez sliko
+  		  if (meni_stanje == 0)
+  		  {
   			  Narisi_Zacetni_Meni(izbrana_opcija);
 
-  			  // Čakamo na OK, da potrdimo prvo izbiro (npr. START GAME)
   			  if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET)
-  			  {
-  				  if (izbrana_opcija == 0)
-  				  {
-  					  meni_stanje = 2; // Gremo direktno v IGRO
-
-				  }
-  				  else
-  				  {
-  	                meni_stanje = 1; // Gremo v PODMENI (ki ga še ni)
-  				  }
-
-  	            HAL_Delay(20);
-
-  	            /*
-  	            // Ko gremo v igro, moramo počistiti/pripraviti zaslon <- tuki pridejo ozadja različnih levelov
-  	            if (meni_stanje == 2)
-  	            UG_FillFrame(0, 0, 319, 239, C_BLACK);
-  	            */
-
+  			  {while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
+  			Title_screen_narisi();
+  				  if (izbrana_opcija == 0) meni_stanje = 2; // Gremo direktno v IGRO
+  				  else { meni_stanje = 1; izbrana_opcija = 2;} // Gremo v PODMENI (nastavi na prvo opcijo podmenija)
   			  }
 
-  	// PREMIKANJE PO MENIJU
-
-  	        if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET) {
-  	        	while(HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET){}
-  	        	izbrana_opcija = (izbrana_opcija > 0) ? izbrana_opcija - 1 : 1;
-  	            Narisi_Zacetni_Meni(izbrana_opcija);
-  	            HAL_Delay(50);
-  	        }
-  	        if (HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET) {
-  	        	while(HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET){}
-  	            izbrana_opcija = (izbrana_opcija < 1) ? izbrana_opcija + 1 : 0;
-  	            Narisi_Zacetni_Meni(izbrana_opcija);
-  	            HAL_Delay(50);
-  	        }
+  			premikanje_po_meniju(0, 1);
   	    }
 
   // STANJE 1: PODMENI (IGRALCI / TEŽAVNOST)
@@ -574,31 +548,24 @@ int main(void)
   // Meni stanje:    3 - nastavitev podmeni_players
   //   				 4 - nastavitev podmeni_levels
 
-  	    if (meni_stanje == 1) {
-
+  	    if (meni_stanje == 1)
+  	    {
   	    	Podmeni(izbrana_opcija);
 
-  	    	if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET)
-  	    	{while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
-  	    		if(izbrana_opcija == 2) { //"players"
-
-  	    			meni_stanje = 3; // Gremo v podmeni_players
-  	    		}
-  	    		else
-  	    		{
-  	    			meni_stanje = 4; // Gremo v podmeni_levels
-
-  	    		}
-
-  	    		 HAL_Delay(20);
-
+  	    	if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET)
+  	    	{while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
+  	    	Title_screen_narisi();
+  	    		if(izbrana_opcija == 2) meni_stanje = 3; //"players"
+  	    		else { meni_stanje = 4; izbrana_opcija = 4;} // Gremo v podmeni_levels
   	    	}
+  	    	premikanje_po_meniju(2, 3);
+  	    }
 
 
-  	        if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET) {
-  	        	while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
+  	        if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET) {
+  	        	while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
+  	        	Title_screen_narisi();
   	            meni_stanje = 0;
-  	            HAL_Delay(200);
   	        }
 
 
@@ -612,21 +579,13 @@ int main(void)
   	        {
   	        	Podmeni_players(izbrana_opcija);
 
-  	        	if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET)
-  	        	{while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
-  	        		if(izbrana_opcija == 4) { //2 players
-
-  	        			meni_stanje = 5; // Pojdi v funkcijo, kjer nastavi dva igralca
-
-  	        	  	}
-  	        		else
-  	        	  	{
-  	        	  		meni_stanje = 6; // Pojdi v funkcijo, kjer nastavi AI
-  	        	  	}
-
-  	        	HAL_Delay(20);
-
+  	        	if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET)
+  	        	{while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
+  	        	Title_screen_narisi();
+  	        		if( izbrana_opcija == 4) meni_stanje = 5; // Pojdi v funkcijo, kjer nastavi dva igralca
+  	        		else { meni_stanje = 6; izbrana_opcija = 6; } // Pojdi v funkcijo, kjer nastavi AI
   	        	}
+  	        	premikanje_po_meniju(4, 5);
   	        }
 
 
@@ -644,26 +603,21 @@ int main(void)
   	      {
   	    	Podmeni_levels(izbrana_opcija);
 
-  	    	if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET)
-  	    	{while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
-  	    	  	 if(izbrana_opcija== 6) { //easy
+  	    	if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET)
+  	    	{while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
+  	    	Title_screen_narisi();
+  	    	  	 if(izbrana_opcija== 6) zogica_hitrost = 2.0; //easy
+  	    	  	 else if(izbrana_opcija == 7) zogica_hitrost = 4.0; // medium
+  	    	  	 else if(izbrana_opcija == 8) zogica_hitrost = 8.0; // hard
 
-  	    	  	     meni_stanje = 7; // Pojdi v funkcijo, kjer nastavi na easy (min. hitrost zoge)
-
-  	    	  	 }
-  	    	  	 else if(izbrana_opcija == 7) // medium
-  	    	  	 {
-  	    	  		 meni_stanje = 8; // Pojdi v funkcijo, kjer nastavi na easy (mid. hitrost zoge)
-  	    	  	 }
-  	    	  	 else
-  	    	  	 {
-  	    	  		 meni_stanje = 9; // Pojdi v funkcijo, kjer nastavi na easy (max. hitrost zoge)
-  	    	  	 }
-
-  	    	  	 HAL_Delay(20);
+  	    	  	 meni_stanje = 1; // Gremo nazaj v podmeni
+  	    	  	 izbrana_opcija = 3; // Kurzor postavimo nazaj na LEVEL
 
   	    	  }
+  	    	premikanje_po_meniju(6, 8); // meje
   	    	}
+
+
 
   // STANJE 2: IGRA
 
@@ -695,7 +649,6 @@ int main(void)
   	      	   }
 
   	    }
-}
 
   // ------------------------------------------------------------------------------
   // Čakaj, da uporabnik pritisne tipko OK (PC15, kot v tvoji funkciji zogica_reset)
@@ -1261,6 +1214,27 @@ void Podmeni_levels(uint8_t izbrana_opcija) {
 	        UG_PutString(x3, 140, "HARD");
 	    }
 //-----------------------------------------------------------------------------------------------
+
+void premikanje_po_meniju(uint8_t min, uint8_t max) {
+	 if (HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET) {
+	  	while(HAL_GPIO_ReadPin(BTN_UP_GPIO_Port, BTN_UP_Pin) == GPIO_PIN_RESET){}
+	  		if(izbrana_opcija > min) {
+	  			izbrana_opcija--;
+	  		}
+	  		HAL_Delay(50);
+	  }
+
+	  if (HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET) {
+	  	 while(HAL_GPIO_ReadPin(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin) == GPIO_PIN_RESET){}
+	  	 	 if(izbrana_opcija < max) {
+	  	 		 izbrana_opcija++;
+	  		  }
+	  		  HAL_Delay(50);
+	  }
+}
+//-----------------------------------------------------------------------------------------------
+
+
 
 /**
   * @brief  This function is executed in case of error occurrence.
