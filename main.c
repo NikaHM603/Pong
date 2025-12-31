@@ -1122,7 +1122,7 @@ void Narisi_Zacetni_Meni(uint8_t izbrana_opcija) {
         // Opcija 1: MENU
         if (izbrana_opcija == 1) {
             UG_SetForecolor(C_YELLOW); // Izbrana barva
-            UG_SetBackcolor(C_DARK_GRAY);
+            UG_SetBackcolor(background_color_for_text);
         } else {
             UG_SetForecolor(C_WHITE);  // Navadna barva
         }
@@ -1147,7 +1147,7 @@ void Podmeni(uint8_t izbrana_opcija) {
 
 	    // Opcija 0: START GAME
 	            if (izbrana_opcija == 2) {
-	            	UG_SetBackcolor(C_DARK_GRAY);
+	            	UG_SetBackcolor(background_color_for_text);
 	                UG_SetForecolor(C_YELLOW); // Izbrana barva
 	            } else {
 	                UG_SetForecolor(C_WHITE);  // Navadna barva
@@ -1157,7 +1157,7 @@ void Podmeni(uint8_t izbrana_opcija) {
 	            // Opcija 1: MENU
 	            if (izbrana_opcija == 3) {
 	                UG_SetForecolor(C_YELLOW); // Izbrana barva
-	                UG_SetBackcolor(C_DARK_GRAY);
+	                UG_SetBackcolor(background_color_for_text);
 	            } else {
 	                UG_SetForecolor(C_WHITE);  // Navadna barva
 	            }
@@ -1184,7 +1184,7 @@ void Podmeni_players(uint8_t izbrana_opcija) {
 	int x2 = (240 - (5 * 16)) / 2; // "LEVEL"   (5 znakov) -> x = 80
 	// Opcija 0: 2 PLAYERS
 	        if (izbrana_opcija == 4) {
-	        	UG_SetBackcolor(C_DARK_GRAY);
+	        	UG_SetBackcolor(background_color_for_text);
 	            UG_SetForecolor(C_YELLOW); // Izbrana barva
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
@@ -1194,11 +1194,11 @@ void Podmeni_players(uint8_t izbrana_opcija) {
 	        // Opcija 1: SINGLE PLAYER
 	        if (izbrana_opcija == 5) {
 	            UG_SetForecolor(C_YELLOW); // Izbrana barva
-	            UG_SetBackcolor(C_DARK_GRAY);
+	            UG_SetBackcolor(background_color_for_text);
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
 	        }
-	        UG_PutString(x_levo, 125, "SINGLE PLAYER");
+	        UG_PutString(x_levo, 125, "1 PLAYER");
 	    }
 
 //-----------------------------------------------------------------------------------------------
@@ -1231,7 +1231,7 @@ void Podmeni_levels(uint8_t izbrana_opcija) {
 
 			// Opcija 0: EASY
 	        if (izbrana_opcija == 6) {
-	        	UG_SetBackcolor(C_DARK_GRAY);
+	        	UG_SetBackcolor(background_color_for_text);
 	            UG_SetForecolor(C_YELLOW); // Izbrana barva
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
@@ -1241,7 +1241,7 @@ void Podmeni_levels(uint8_t izbrana_opcija) {
 	        // Opcija 1: MEDIUM
 	        if (izbrana_opcija == 7) {
 	            UG_SetForecolor(C_YELLOW); // Izbrana barva
-	            UG_SetBackcolor(C_DARK_GRAY);
+	            UG_SetBackcolor(background_color_for_text);
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
 	        }
@@ -1251,7 +1251,7 @@ void Podmeni_levels(uint8_t izbrana_opcija) {
 			// Opcija 2: HARD
 	        if (izbrana_opcija == 8) {
 	            UG_SetForecolor(C_YELLOW); // Izbrana barva
-	            UG_SetBackcolor(C_DARK_GRAY);
+	            UG_SetBackcolor(background_color_for_text);
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
 	        }
