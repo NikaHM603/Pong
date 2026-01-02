@@ -537,6 +537,9 @@ int main(void)
   //   				 1 - nastavitev podmenija
 
   		  if (meni_stanje == 0)
+  			 // zogica_hitrost = 0.5;
+  		//  izbrana_opcija = 4;
+  		 // meni_stanje = 2;
   		  {
   			  Narisi_Zacetni_Meni(izbrana_opcija);
 
@@ -594,7 +597,10 @@ int main(void)
   	        	{while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
   	        	Title_screen_narisi();
   	        		if( izbrana_opcija == 4) meni_stanje = 5; // Pojdi v funkcijo, kjer nastavi dva igralca
-  	        		else { meni_stanje = 6; izbrana_opcija = 6; } // Pojdi v funkcijo, kjer nastavi AI
+  	        		else { meni_stanje = 6; izbrana_opcija = 5; } // Pojdi v funkcijo, kjer nastavi AI
+  	        		meni_stanje = 1;
+  	        		izbrana_opcija = 2;
+
   	        	}
   	        	premikanje_po_meniju(4, 5);
 
@@ -658,12 +664,13 @@ int main(void)
 
   // STANJE 2: IGRA
 
-  	    if (meni_stanje == 2) {
+  	    if (meni_stanje == 2){
     	      UG_FillFrame(0, 0, 320, 240, C_BLACK);
     	      narisi_score();
     	      narisi_paddle();
     	      narisi_sredino();
     	      zogica_reset(); // tuki notr se že nariše sredina
+
 
 
     	      while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) != GPIO_PIN_RESET) {}
@@ -672,6 +679,7 @@ int main(void)
 
     	      //while loop, dejanska igra :)
     	      while(!preveri_zmago()){  // Izvaja se, dokler ni igre konec
+    	    	 AI();
   	    		paddle_update();
   	    		narisi_score();
   	    		narisi_sredino();
@@ -875,13 +883,17 @@ void zogica_reset(void) {
 	UG_FillCircle(160, 120, 5, C_WHITE);
 
 
-	//while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_SET) {}
+	while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_SET) {
+		HAL_Delay(10);
+	}
+
+	while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET);
 
 
 	UG_FillFrame(100, 160, 220, 180, C_BLACK); // Ko pritisneš OK, pobriši napis in nadaljuj
 
-	zogica_dx = (zogica_dx > 0) ? -2.0f : 2.0f;
-	zogica_dy = 1.5f;
+	zogica_dx = (zogica_dx > 0) ? -2.0 : 2.0;
+	zogica_dy = 1.5;
 
 	//return 1;
 
@@ -1297,51 +1309,73 @@ void premikanje_po_meniju(uint8_t min, uint8_t max) {
 	  		  HAL_Delay(50);
 	  }
 }
+
 //-----------------------------------------------------------------------------------------------
 
-void posodobi_AI_lopar(void) {
 
-	int paddle_right_cenetr = paddle_y_desna + (paddle_height / 2);
+void AI(uint8_t izbrana_opcija) {
+	int old_y_desna = paddle_y_desna;
 
-    static int napaka_y = 0;      // Shranjen zamik napake
+	    posodobi_AI(); // Izračuna nov paddle_y_desna glede na žogico
+
+	    // Omejitev, da ne gre čez rob
+	    if (paddle_y_desna < 0) paddle_y_desna = 0;
+	    if (paddle_y_desna > 240 - paddle_height) paddle_y_desna = 240 - paddle_height;
+
+	    // Izris premika (da AI dejansko vidiš)
+	    if (old_y_desna != paddle_y_desna) {
+	        UG_FillFrame(paddle_x_desna, old_y_desna, paddle_x_desna + paddle_width - 1, old_y_desna + paddle_height - 1, C_BLACK);
+	        UG_FillFrame(paddle_x_desna, paddle_y_desna, paddle_x_desna + paddle_width - 1, paddle_y_desna + paddle_height - 1, C_WHITE);
+	    }
+}
+
+//-----------------------------------------------------------------------------------------------
+
+void posodobi_AI(void) {
+    // IZRAČUN (mora biti tukaj, ne zgoraj pri definicijah!)
+    paddle_right_center = paddle_y_desna + (paddle_height / 2);
+
+    static int napaka_y = 0;
     static int stevec_osveževanja = 0;
-
-    // Določanje parametrov glede na zogica_hitrost (težavnost)
     int osvezi_na_n_ciklov;
     int max_zgrešek;
+    float hitrost_AI_lokalna;
 
-    if (zogica_hitrost <= 0.5f) {      // EASY
-        osvezi_na_n_ciklov = 20;       // AI je zelo počasen pri odločanju
-        max_zgrešek = 40;              // Lahko zgreši za 40 pikslov
+    // Nastavitve težavnosti
+    if (zogica_hitrost <= 0.6) {      // EASY
+        osvezi_na_n_ciklov = 25;
+        max_zgrešek = 45;
+        hitrost_AI_lokalna = 2.0;
     }
-    else if (zogica_hitrost <= 1.5f) { // MEDIUM
-        osvezi_na_n_ciklov = 10;
+    else if (zogica_hitrost <= 1.1) { // MEDIUM
+        osvezi_na_n_ciklov = 12;
         max_zgrešek = 20;
+        hitrost_AI_lokalna = 3.0;
     }
     else {                             // HARD
-        osvezi_na_n_ciklov = 3;
-        max_zgrešek = 5;               // Skoraj popolno sledenje
+        osvezi_na_n_ciklov = 2;
+        max_zgrešek = 2;
+        hitrost_AI_lokalna = fabsf(zogica_dy * zogica_hitrost) + 0.5;
     }
 
-    // AI ne spreminja svoje "ciljne točke" v vsakem ciklu
     stevec_osveževanja++;
     if (stevec_osveževanja >= osvezi_na_n_ciklov) {
         stevec_osveževanja = 0;
-        // AI si zamisli, da je žogica malce višje ali nižje, kot je v resnici
-        napaka_y = (rand() % (2 * max_zgrešek + 1)) - max_zgrešek;
+        if (max_zgrešek > 0)
+            napaka_y = (rand() % (2 * max_zgrešek + 1)) - max_zgrešek;
+        else napaka_y = 0;
     }
 
-    // Sredina loparja, ki mu dodamo namerno napako
-    // paddle_height mora biti definirana (npr. 40)
-    int ai_target_y = zogica_y + napaka_y;
-    //int paddle_right_center = paddle_y_desna + (paddle_height / 2);
+    int ai_target_y = (int)zogica_y + napaka_y;
 
-    // Premikanje loparja proti (napačni) tarči
-    if (ai_target_y < paddle_right_center && paddle_y_desna > 0) {
-        paddle_y_desna -= 2; // Hitrost premika loparja
-    }
-    else if (ai_target_y > paddle_right_center && paddle_y_desna < (240 - paddle_height)) {
-        paddle_y_desna += 2;
+    // Premikanje
+    if (abs(ai_target_y - paddle_right_center) > 2) {
+        if (ai_target_y < paddle_right_center && paddle_y_desna > 2) {
+            paddle_y_desna -= (int)hitrost_AI_lokalna;
+        }
+        else if (ai_target_y > paddle_right_center && paddle_y_desna < (240 - paddle_height - 2)) {
+            paddle_y_desna += (int)hitrost_AI_lokalna;
+        }
     }
 }
 //-----------------------------------------------------------------------------------------------
