@@ -104,6 +104,10 @@ uint8_t izbrana_opcija = 0;
 
 uint8_t x_levo = 50;
 
+int paddle_right_center;
+
+float ai_error_rate = 0.0;  // Verjetnost napake (0.0 - 1.0)
+int ai_reaction_delay = 0;   // Zamik v ciklih
 
 
 //link za pretvorbo fotk: https://www.digole.com/tools/PicturetoC_Hex_converter.php
@@ -385,9 +389,9 @@ uint8_t x_levo = 50;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void zogica_narisi(void);
-int zogica_reset(void);
+void zogica_reset(void);
 _Bool preveri_zmago(void);
-float narisi_score(void);
+void narisi_score(void);
 void povecaj_score(int igralec);
 void score_reset(void);
 void Title_screen_narisi();
@@ -559,18 +563,21 @@ int main(void)
   	    	if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET)
   	    	{while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
   	    	Title_screen_narisi();
-  	    		if(izbrana_opcija == 2) meni_stanje = 3; //"players"
-  	    		else { meni_stanje = 4; izbrana_opcija = 4;} // Gremo v podmeni_levels
+  	    		if(izbrana_opcija == 2) {izbrana_opcija = 4; meni_stanje = 3;}//"players"
+  	    		else { meni_stanje = 4; izbrana_opcija = 6;} // Gremo v podmeni_levels
   	    	}
   	    	premikanje_po_meniju(2, 3);
-  	    }
-
 
   	        if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET) {
   	        	while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
   	        	Title_screen_narisi();
   	            meni_stanje = 0;
+  	            izbrana_opcija = 1;
   	        }
+  	    }
+
+
+
 
 
   // STANJE 3: PODMENI PLAYERS
@@ -590,13 +597,17 @@ int main(void)
   	        		else { meni_stanje = 6; izbrana_opcija = 6; } // Pojdi v funkcijo, kjer nastavi AI
   	        	}
   	        	premikanje_po_meniju(4, 5);
+
+  	  	      if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET) {
+  	  	      	        	while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
+  	  	      	        	Title_screen_narisi();
+  	  	      	            meni_stanje = 1;
+  	  	      	      izbrana_opcija = 2;
+  	  	      	        }
+
   	        }
 
-  	      if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET) {
-  	      	        	while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
-  	      	        	Title_screen_narisi();
-  	      	            meni_stanje = 1;
-  	      	        }
+
 
 
   // STANJE 4: PODMENI LEVELS
@@ -611,42 +622,53 @@ int main(void)
 
   	      if (meni_stanje == 4)
   	      {
+
   	    	Podmeni_levels(izbrana_opcija);
 
   	    	if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET)
   	    	{while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
   	    	Title_screen_narisi();
+
   	    	  	 if(izbrana_opcija== 6) zogica_hitrost = 0.5; //easy
   	    	  	 else if(izbrana_opcija == 7) zogica_hitrost = 1.0; // medium
   	    	  	 else if(izbrana_opcija == 8) zogica_hitrost = 3.0; // hard
 
+  	    	//  	 Title_screen_narisi();
   	    	  	 meni_stanje = 1; // Gremo nazaj v podmeni
   	    	  	 izbrana_opcija = 3; // Kurzor postavimo nazaj na LEVEL
 
   	    	  }
   	    	premikanje_po_meniju(6, 8); // meje
+
+
+  	  	    if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET) {
+  	  	    	        	while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
+  	  	    	        	Title_screen_narisi();
+  	  	    	            meni_stanje = 1;
+  	  	    	            izbrana_opcija = 3;
+  	  	    	        }
   	    	}
 
-  	    if (HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET) {
-  	    	        	while(HAL_GPIO_ReadPin(BTN_ESC_GPIO_Port, BTN_ESC_Pin) == GPIO_PIN_RESET){}
-  	    	        	//Title_screen_narisi();
-  	    	            meni_stanje = 1;
-  	    	        }
+
+
+
+
 
 
 
   // STANJE 2: IGRA
 
   	    if (meni_stanje == 2) {
-    	      UG_FillFrame(0, 0, 319, 239, C_BLACK);
+    	      UG_FillFrame(0, 0, 320, 240, C_BLACK);
     	      narisi_score();
     	      narisi_paddle();
     	      narisi_sredino();
     	      zogica_reset(); // tuki notr se že nariše sredina
 
-    	      HAL_Delay(1000);
 
     	      while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) != GPIO_PIN_RESET) {}
+
+
 
     	      //while loop, dejanska igra :)
     	      while(!preveri_zmago()){  // Izvaja se, dokler ni igre konec
@@ -843,9 +865,9 @@ void zogica_narisi(void) {  // ta stvar mal čudn deluje
 }
 //-----------------------------------------------------------------------------------------------
 
-int zogica_reset(void) {
-	zogica_x = 160.0f;
-	zogica_y = 120.0f;
+void zogica_reset(void) {
+	zogica_x = 160;
+	zogica_y = 120;
 
 	//narisi_score();
 	//narisi_sredino();
@@ -853,8 +875,7 @@ int zogica_reset(void) {
 	UG_FillCircle(160, 120, 5, C_WHITE);
 
 
-	while(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_15) == GPIO_PIN_SET) {
-	}
+	//while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_SET) {}
 
 
 	UG_FillFrame(100, 160, 220, 180, C_BLACK); // Ko pritisneš OK, pobriši napis in nadaljuj
@@ -862,7 +883,7 @@ int zogica_reset(void) {
 	zogica_dx = (zogica_dx > 0) ? -2.0f : 2.0f;
 	zogica_dy = 1.5f;
 
-	return 1;
+	//return 1;
 
 }
 //-----------------------------------------------------------------------------------------------
@@ -892,7 +913,7 @@ _Bool preveri_zmago(void) {
 }
 //-----------------------------------------------------------------------------------------------
 
-float narisi_score(void) {
+void narisi_score(void) {
 	char score_buffer[16]; // Začasni prostor za pretvorbo številk v tekst
 
 	UG_FontSelect(&FONT_12X16);
@@ -907,10 +928,10 @@ float narisi_score(void) {
 	sprintf(score_buffer, "%d", score_D);
 	UG_PutString(207, 10, score_buffer);
 
-	if (score_L > 4 || score_D > 4) {
-	        return 1;
-	    }
-	    return 0;
+	//if (score_L > 4 || score_D > 4) {
+	 //       return 1;
+	  //  }
+	   // return 0;
 	}
 //-----------------------------------------------------------------------------------------------
 
@@ -932,7 +953,7 @@ void povecaj_score(int igralec) {
 		// Tukaj pride utripanje luck
 	}
 
-	HAL_Delay(1000);
+	//HAL_Delay(1000);
 	}
 
     UG_FillFrame(0, 0, 320, 240, C_BLACK);
@@ -953,7 +974,7 @@ void score_reset(void) {
 
 		narisi_score();
 
-		HAL_Delay(500);
+		//HAL_Delay(500);
 
 		//zogica_reset();
 	}
@@ -1278,6 +1299,52 @@ void premikanje_po_meniju(uint8_t min, uint8_t max) {
 }
 //-----------------------------------------------------------------------------------------------
 
+void posodobi_AI_lopar(void) {
+
+	int paddle_right_cenetr = paddle_y_desna + (paddle_height / 2);
+
+    static int napaka_y = 0;      // Shranjen zamik napake
+    static int stevec_osveževanja = 0;
+
+    // Določanje parametrov glede na zogica_hitrost (težavnost)
+    int osvezi_na_n_ciklov;
+    int max_zgrešek;
+
+    if (zogica_hitrost <= 0.5f) {      // EASY
+        osvezi_na_n_ciklov = 20;       // AI je zelo počasen pri odločanju
+        max_zgrešek = 40;              // Lahko zgreši za 40 pikslov
+    }
+    else if (zogica_hitrost <= 1.5f) { // MEDIUM
+        osvezi_na_n_ciklov = 10;
+        max_zgrešek = 20;
+    }
+    else {                             // HARD
+        osvezi_na_n_ciklov = 3;
+        max_zgrešek = 5;               // Skoraj popolno sledenje
+    }
+
+    // AI ne spreminja svoje "ciljne točke" v vsakem ciklu
+    stevec_osveževanja++;
+    if (stevec_osveževanja >= osvezi_na_n_ciklov) {
+        stevec_osveževanja = 0;
+        // AI si zamisli, da je žogica malce višje ali nižje, kot je v resnici
+        napaka_y = (rand() % (2 * max_zgrešek + 1)) - max_zgrešek;
+    }
+
+    // Sredina loparja, ki mu dodamo namerno napako
+    // paddle_height mora biti definirana (npr. 40)
+    int ai_target_y = zogica_y + napaka_y;
+    //int paddle_right_center = paddle_y_desna + (paddle_height / 2);
+
+    // Premikanje loparja proti (napačni) tarči
+    if (ai_target_y < paddle_right_center && paddle_y_desna > 0) {
+        paddle_y_desna -= 2; // Hitrost premika loparja
+    }
+    else if (ai_target_y > paddle_right_center && paddle_y_desna < (240 - paddle_height)) {
+        paddle_y_desna += 2;
+    }
+}
+//-----------------------------------------------------------------------------------------------
 
 
 /**
