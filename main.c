@@ -895,7 +895,7 @@ _Bool preveri_zmago(void) {
 float narisi_score(void) {
 	char score_buffer[16]; // Začasni prostor za pretvorbo številk v tekst
 
-	UG_FontSelect(&FONT_16X26);
+	UG_FontSelect(&FONT_12X16);
 	UG_SetForecolor(C_WHITE);
 	UG_SetBackcolor(C_BLACK);
 
@@ -935,7 +935,7 @@ void povecaj_score(int igralec) {
 	HAL_Delay(1000);
 	}
 
-    UG_FillFrame(0, 0, 319, 239, C_BLACK);
+    UG_FillFrame(0, 0, 320, 240, C_BLACK);
     narisi_score();
     narisi_paddle();
     narisi_sredino();
@@ -1074,9 +1074,9 @@ void Popravi_Ozadje(int16_t x, int16_t y, int16_t r)
         for (int16_t s = x_start; s < x_start + dimenzija; s++)
         {
             // Preverimo robove zaslona
-            if (s >= 0 && s < 320 && v >= 0 && v < 240)
+            if (s >= 0 && s < 321 && v >= 0 && v < 241)
             {
-                uint32_t index = (v * 320 + s) * 2;
+                uint32_t index = (v * 321 + s) * 2;
                 uint8_t b1 = moja_slika[index];
                 uint8_t b2 = moja_slika[index + 1];
                 uint16_t piksel = (b1 << 8) | b2;
@@ -1093,10 +1093,10 @@ void Narisi_Zacetni_Meni(uint8_t izbrana_opcija) {
     //Title_screen_narisi(); //Nariše celo ozadje
 
     //Nastavitve teksta
-    UG_FontSelect(&FONT_16X26);
+    UG_FontSelect(&FONT_12X16);
     UG_FontSetHSpace(0); // Za vsak primer
     UG_FontSetVSpace(0);
-    uint8_t x_levo = 40;
+    //uint8_t x_levo = 40;
 
     char* opt1 = "START GAME";
     char* opt2 = "MENU";
@@ -1117,7 +1117,7 @@ void Narisi_Zacetni_Meni(uint8_t izbrana_opcija) {
         } else {
             UG_SetForecolor(C_WHITE);  // Navadna barva
         }
-        UG_PutString(x_levo, 80, "START GAME");
+        UG_PutString(x_levo, 75, "START GAME");
 
         // Opcija 1: MENU
         if (izbrana_opcija == 1) {
@@ -1126,13 +1126,13 @@ void Narisi_Zacetni_Meni(uint8_t izbrana_opcija) {
         } else {
             UG_SetForecolor(C_WHITE);  // Navadna barva
         }
-        UG_PutString(x_levo, 125, "MENU");
+        UG_PutString(x_levo, 115, "MENU");
     }
 //-----------------------------------------------------------------------------------------------
 
 void Podmeni(uint8_t izbrana_opcija) {
 	 //Nastavitve teksta
-	    UG_FontSelect(&FONT_16X26);
+	    UG_FontSelect(&FONT_12X16);
 	    UG_FontSetHSpace(0); // Za vsak primer
 	    UG_FontSetVSpace(0);
 
@@ -1152,7 +1152,7 @@ void Podmeni(uint8_t izbrana_opcija) {
 	            } else {
 	                UG_SetForecolor(C_WHITE);  // Navadna barva
 	            }
-	            UG_PutString(x_levo, 85, "PLAYERS");
+	            UG_PutString(x_levo, 75, "PLAYERS");
 
 	            // Opcija 1: MENU
 	            if (izbrana_opcija == 3) {
@@ -1161,14 +1161,14 @@ void Podmeni(uint8_t izbrana_opcija) {
 	            } else {
 	                UG_SetForecolor(C_WHITE);  // Navadna barva
 	            }
-	            UG_PutString(x_levo, 125, "LEVEL");
+	            UG_PutString(x_levo, 115, "LEVEL");
 	        }
 
 //-----------------------------------------------------------------------------------------------
 
 void Podmeni_players(uint8_t izbrana_opcija) {
 
-	UG_FontSelect(&FONT_16X26);
+	UG_FontSelect(&FONT_12X16);
 	UG_FontSetHSpace(0); // Za vsak primer
 	UG_FontSetVSpace(0);
 
@@ -1189,7 +1189,7 @@ void Podmeni_players(uint8_t izbrana_opcija) {
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
 	        }
-	        UG_PutString(x_levo, 85, "2 PLAYERS");
+	        UG_PutString(x_levo, 75, "2 PLAYERS");
 
 	        // Opcija 1: SINGLE PLAYER
 	        if (izbrana_opcija == 5) {
@@ -1198,14 +1198,14 @@ void Podmeni_players(uint8_t izbrana_opcija) {
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
 	        }
-	        UG_PutString(x_levo, 125, "1 PLAYER");
+	        UG_PutString(x_levo, 115, "1 PLAYER");
 	    }
 
 //-----------------------------------------------------------------------------------------------
 
 void Podmeni_levels(uint8_t izbrana_opcija) {
 
-	UG_FontSelect(&FONT_16X26);
+	UG_FontSelect(&FONT_12X16);
 	UG_FontSetHSpace(0); // Za vsak primer
 	UG_FontSetVSpace(0);
 
@@ -1236,7 +1236,7 @@ void Podmeni_levels(uint8_t izbrana_opcija) {
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
 	        }
-	        UG_PutString(x_levo, 70, "EASY");
+	        UG_PutString(x_levo, 60, "EASY");
 
 	        // Opcija 1: MEDIUM
 	        if (izbrana_opcija == 7) {
@@ -1245,7 +1245,7 @@ void Podmeni_levels(uint8_t izbrana_opcija) {
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
 	        }
-	        UG_PutString(x_levo, 105, "MEDIUM");
+	        UG_PutString(x_levo, 95, "MEDIUM");
 
 
 			// Opcija 2: HARD
@@ -1255,7 +1255,7 @@ void Podmeni_levels(uint8_t izbrana_opcija) {
 	        } else {
 	            UG_SetForecolor(C_WHITE);  // Navadna barva
 	        }
-	        UG_PutString(x_levo,(int) 140, "HARD");
+	        UG_PutString(x_levo,(int) 130, "HARD");
 	    }
 //-----------------------------------------------------------------------------------------------
 
