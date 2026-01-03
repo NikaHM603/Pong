@@ -70,7 +70,7 @@
 
 /* USER CODE BEGIN PV */
 
-float zogica_hitrost = 1.0;
+float zogica_hitrost = 0.5; //Novo, da je po defaulu glede na hitrost zogice mode=easy (za ai)
 
 float zogica_x = 160.0f;
 float zogica_y = 120.0f;
@@ -368,6 +368,7 @@ int ai_reaction_delay = 0;   // Zamik v ciklih
 
 
 	uint16_t background_color_for_text;
+	_Bool ai_flag=0;
  //LEVA PLOSCICA
 
    	  //int paddle_x_leva = 20;
@@ -596,8 +597,8 @@ int main(void)
   	        	if (HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET)
   	        	{while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
   	        	Title_screen_narisi();
-  	        		if( izbrana_opcija == 4) meni_stanje = 5; // Pojdi v funkcijo, kjer nastavi dva igralca
-  	        		else { meni_stanje = 6; izbrana_opcija = 5; } // Pojdi v funkcijo, kjer nastavi AI
+  	        		if( izbrana_opcija == 4) {meni_stanje = 5;ai_flag=0;} // Pojdi v funkcijo, kjer nastavi dva igralca
+  	        		else { meni_stanje = 6; izbrana_opcija = 5;ai_flag=1; } // Pojdi v funkcijo, kjer nastavi AI
   	        		meni_stanje = 1;
   	        		izbrana_opcija = 2;
 
@@ -671,16 +672,41 @@ int main(void)
     	      narisi_sredino();
     	      zogica_reset(); // tuki notr se že nariše sredina
 
+			uint32_t ticks=HAL_GetTick();//stevilo tickov od starta
+
+			while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) != GPIO_PIN_RESET) {}
+
+			ticks=HAL_GetTick()-ticks;//preverimo stevilo tickov, ki so se zgodili v času čakanja na pritisk OK
+
+			uint8_t ticks_zadnja_stevka=ticks%10;
+
+			uint8_t ticks_predzadnja_stevka=ticks%100;
+			ticks_predzadnja_stevka=(ticks_predzadnja_stevka-ticks_predzadnja_stevka%10)/10;
+
+			//preden gremo v igro določimo x in y komponenti smeri (z omejitvami)
+			//glede na pretečene ticke. Bo dovolj naključno, ker gledamo najmanjši števki
+			//ki se najhitreje spreminjata, zato je rezultat težko reproducirati
+
+			//omejitev x je lahko poljuben. Predznak x je + če je liha cifra, sicer -
+			zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*ticks_zadnja_stevka+1;
+
+			// - za y uporabimo predzadnjo stevko
+			// - omejitev y mora biti več ko npr. 10% od x. Če bi bil y blizu 0% od x
+			//		bi lahko žogica vertikalno poletela in se ciklala
+			// - Predznak y je + če je večje od 5, sicer -
+			zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*ticks_predzadnja_stevka+1;
+
+			//če je prenizko: ohranimo predznak dy (ulomek) in upoštevamo spodnjo mejo 10% dx.
+			//if (zogica_dy<(zogica_dx/10))zogica_dy=(zogica_dy/abs(zogica_dy))*abs(zogica_dx)/10;
+			if(zogica_dy>4*zogica_dx)zogica_dy=2*zogica_dx;
 
 
-    	      while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) != GPIO_PIN_RESET) {}
-
-
+			//verjetno sem kaj pozabil, sprobaj pa javi :)
 
     	      //while loop, dejanska igra :)
     	      while(!preveri_zmago()){  // Izvaja se, dokler ni igre konec
-    	    	 AI();
-  	    		paddle_update();
+    	    	 if(ai_flag==1)AI();
+    	    	paddle_update();
   	    		narisi_score();
   	    		narisi_sredino();
 				zogica_narisi();
@@ -872,7 +898,6 @@ void zogica_narisi(void) {  // ta stvar mal čudn deluje
     UG_FillCircle((int16_t)zogica_x, (int16_t)zogica_y, zogica_size, C_WHITE);
 }
 //-----------------------------------------------------------------------------------------------
-
 void zogica_reset(void) {
 	zogica_x = 160;
 	zogica_y = 120;
@@ -883,17 +908,18 @@ void zogica_reset(void) {
 	UG_FillCircle(160, 120, 5, C_WHITE);
 
 
-	while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_SET) {
-		HAL_Delay(10);
-	}
+	//while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_SET) {
+		//HAL_Delay(10);
+	//}
 
-	while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET);
+
+	//while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET);
 
 
 	UG_FillFrame(100, 160, 220, 180, C_BLACK); // Ko pritisneš OK, pobriši napis in nadaljuj
 
-	zogica_dx = (zogica_dx > 0) ? -2.0 : 2.0;
-	zogica_dy = 1.5;
+	//zogica_dx = (zogica_dx > 0) ? -2.0 : 2.0;
+	//zogica_dy = 1.5;
 
 	//return 1;
 
@@ -913,12 +939,40 @@ void Popravi_Ozadje_Pravokotnik(int16_t x, int16_t y, int16_t w, int16_t h) {
         }
     }
 }
+
 //-----------------------------------------------------------------------------------------------
 
 _Bool preveri_zmago(void) {
     // Ta funkcija vrne 1, če je nekdo dosegel 5 točk (rezultat 4)
     if (score_L > 3 || score_D > 3) {
     	//UG_PutString();  // za winnerja
+
+		uint8_t stevilo_utripov=10;
+
+		for(uint8_t utrip=1;utrip<(stevilo_utripov+1);utrip++)
+		{
+				if (score_D > 3)
+				{
+					HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, utrip%2);
+					HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, utrip%2);
+					HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, utrip%2);
+					HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, utrip%2);
+				}
+				else
+				{
+					HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, utrip%2);
+					HAL_GPIO_WritePin(LED5_GPIO_Port, LED5_Pin, utrip%2);
+					HAL_GPIO_WritePin(LED6_GPIO_Port, LED6_Pin, utrip%2);
+					HAL_GPIO_WritePin(LED7_GPIO_Port, LED7_Pin, utrip%2);
+				}
+				HAL_Delay(500);
+		}
+
+			score_L = 0;
+			score_D = 0;
+
+			Title_screen_narisi();
+
         return 1; // Konec iteracije!
     }
     return 0; // Igra se nadaljuje
@@ -955,18 +1009,21 @@ void povecaj_score(int igralec) {
 		if(score_L > 3) nizi_L++;
 		else nizi_D++;
 
-		score_L = 0;
-		score_D = 0;
 
-	if (nizi_L >= max_nizov || nizi_D >= max_nizov) {
-		nizi_L = 0;
-		nizi_D = 0;
-
-		// Tukaj pride utripanje luck
-	}
 
 	//HAL_Delay(1000);
 	}
+
+	// prizgemo lucke sproti glede na score
+	HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, score_D>0);
+	HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, score_D>1);
+	HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, score_D>2);
+	HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, score_D>3);
+	HAL_GPIO_WritePin(LED4_GPIO_Port, LED4_Pin, score_L>3);
+	HAL_GPIO_WritePin(LED5_GPIO_Port, LED5_Pin, score_L>2);
+	HAL_GPIO_WritePin(LED6_GPIO_Port, LED6_Pin, score_L>1);
+	HAL_GPIO_WritePin(LED7_GPIO_Port, LED7_Pin, score_L>0);
+
 
     UG_FillFrame(0, 0, 320, 240, C_BLACK);
     narisi_score();
@@ -974,13 +1031,44 @@ void povecaj_score(int igralec) {
     narisi_sredino();
     zogica_reset(); // tuki notr se že nariše sredina
 
+	uint32_t ticks=HAL_GetTick();//stevilo tickov od starta
+
+	if(score_L<4&&score_D<4)
+	{
+		while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) != GPIO_PIN_RESET) {}
+	}
+
+	ticks=HAL_GetTick()-ticks;//preverimo stevilo tickov, ki so se zgodili v času čakanja na pritisk OK
+
+	uint8_t ticks_zadnja_stevka=ticks%10;
+
+	uint8_t ticks_predzadnja_stevka=ticks%100;
+	ticks_predzadnja_stevka=(ticks_predzadnja_stevka-ticks_predzadnja_stevka%10)/10;
+
+	//preden gremo v igro določimo x in y komponenti smeri (z omejitvami)
+	//glede na pretečene ticke. Bo dovolj naključno, ker gledamo najmanjši števki
+	//ki se najhitreje spreminjata, zato je rezultat težko reproducirati
+
+	//omejitev x je lahko poljuben. Predznak x je + če je liha cifra, sicer -
+	zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*ticks_zadnja_stevka+1;
+
+	// - za y uporabimo predzadnjo stevko
+	// - omejitev y mora biti več ko npr. 10% od x. Če bi bil y blizu 0% od x
+	//		bi lahko žogica vertikalno poletela in se ciklala
+	// - Predznak y je + če je večje od 5, sicer -
+	zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*ticks_predzadnja_stevka+1;
+
+	//če je prenizko: ohranimo predznak dy (ulomek) in upoštevamo spodnjo mejo 10% dx.
+	//if (zogica_dy<(zogica_dx/10))zogica_dy=(zogica_dy/abs(zogica_dy))*abs(zogica_dx)/10;
+	if(zogica_dy>4*zogica_dx)zogica_dy=2*zogica_dx;
+
 	//zogica_reset();
 
 }
 //-----------------------------------------------------------------------------------------------
 
 void score_reset(void) {
-	if(score_L > 3 || score_D > 3) {
+	if(score_L > 4 || score_D > 4) {
 		score_L = 0;
 		score_D = 0;
 
@@ -1027,6 +1115,8 @@ void paddle_update(void)
 	      	      }
 	      	  }
 
+		  if(ai_flag==0)
+		  {
 	      // ---------- DESNA PLOŠČICA (TIPKE) ----------
 	      int old_y_desna = paddle_y_desna;
 
@@ -1061,6 +1151,7 @@ void paddle_update(void)
 	      	          zogica_x = paddle_x_desna - zogica_size; // Prepreči "zatikanje"
 	      	      }
 	      	  }
+		  }
 }
 //-----------------------------------------------------------------------------------------------
 
@@ -1342,19 +1433,19 @@ void posodobi_AI(void) {
     float hitrost_AI_lokalna;
 
     // Nastavitve težavnosti
-    if (zogica_hitrost <= 0.6) {      // EASY
+    if (zogica_hitrost <= 1) {      // EASY
         osvezi_na_n_ciklov = 25;
         max_zgrešek = 45;
-        hitrost_AI_lokalna = 2.0;
+        hitrost_AI_lokalna = 1.5;
     }
-    else if (zogica_hitrost <= 1.1) { // MEDIUM
+    else if (zogica_hitrost <= 2.0) { // MEDIUM
         osvezi_na_n_ciklov = 12;
         max_zgrešek = 20;
         hitrost_AI_lokalna = 3.0;
     }
     else {                             // HARD
-        osvezi_na_n_ciklov = 2;
-        max_zgrešek = 2;
+        osvezi_na_n_ciklov = 3.5;
+        max_zgrešek = 5;
         hitrost_AI_lokalna = fabsf(zogica_dy * zogica_hitrost) + 0.5;
     }
 
