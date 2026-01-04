@@ -638,7 +638,7 @@ int main(void)
 
   	    	  	 if(izbrana_opcija== 6) zogica_hitrost = 1.8; //easy
   	    	  	 else if(izbrana_opcija == 7) zogica_hitrost = 3.0; // medium
-  	    	  	 else if(izbrana_opcija == 8) zogica_hitrost = 4.0; // hard
+  	    	  	 else if(izbrana_opcija == 8) zogica_hitrost = 5.0; // hard
 
   	    	//  	 Title_screen_narisi();
   	    	  	 meni_stanje = 1; // Gremo nazaj v podmeni
@@ -879,24 +879,26 @@ void zogica_narisi(void) {  // ta stvar mal čudn deluje
     }
 
     // Odboj od LEVE ploščice
-    if (zogica_x - zogica_size/2 <= (paddle_x_leva + paddle_width + delta)) {
-        if (zogica_y >= (paddle_y_leva - delta) && zogica_y <= (paddle_y_leva + paddle_height + delta)) {
+    if ((zogica_x - zogica_size/2) <= (paddle_x_leva + paddle_width/2)) {
+        if ((((zogica_y-zogica_size/2) >= (paddle_y_leva + paddle_height/2)) && ((zogica_y+zogica_size/2) <= (paddle_y_leva - paddle_height/2)))) {
             zogica_dx = -zogica_dx;
-            zogica_x = (paddle_x_leva + paddle_width) + zogica_size + 1; // "Odlepi" žogico od ploščice
+            //zogica_x = (paddle_x_leva + paddle_width) + zogica_size + 1; // "Odlepi" žogico od ploščice
         }
     }
 
     // Odboj od DESNE ploščice
-    if (zogica_x + zogica_size/2 >= (paddle_x_desna - delta)) {
-        if (zogica_y >= (paddle_y_desna - delta) && zogica_y <= (paddle_y_desna + paddle_height + delta)) {
+    if ((zogica_x + zogica_size/2) >= (paddle_x_desna - paddle_width/2)) {
+		if ((((zogica_y-zogica_size/2) >= (paddle_y_desna + paddle_height/2)) && ((zogica_y+zogica_size/2) <= (paddle_y_desna - paddle_height/2)))) {
             zogica_dx = -zogica_dx;
-            zogica_x = paddle_x_desna - zogica_size - 1; // "Odlepi" žogico od ploščice
+            //zogica_x = paddle_x_desna - zogica_size - 1; // "Odlepi" žogico od ploščice
         }
     }
 
     // 5. TOČKE
-    if(zogica_x < 0) { povecaj_score(1); return; }
-    if(zogica_x > 320) { povecaj_score(0); return; }
+    if(zogica_x < (paddle_x_leva+paddle_width/2)) { povecaj_score(1); return; }
+    if(zogica_x > (paddle_x_desna)) {
+    	povecaj_score(0);
+    	return; }
 
     // 6. NARIŠI novo pozicijo
     UG_FillCircle((int16_t)zogica_x, (int16_t)zogica_y, zogica_size, C_WHITE);
@@ -1063,8 +1065,8 @@ void povecaj_score(int igralec) {
 
 	zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*ticks_predzadnja_stevka;
 
-	zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*(1+zogica_dx/50); //normiramo na območje 1-2
-	zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*(1+zogica_dy/50); //normiramo na območje 1-2
+	zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*(1+zogica_dx/20); //normiramo na območje 1-2
+	zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*(1+zogica_dy/20); //normiramo na območje 1-2
 
 	//če je prenizko: ohranimo predznak dy (ulomek) in upoštevamo spodnjo mejo 10% dx.
 	//if (zogica_dy<(zogica_dx/10))zogica_dy=(zogica_dy/abs(zogica_dy))*abs(zogica_dx)/10;
