@@ -70,12 +70,12 @@
 
 /* USER CODE BEGIN PV */
 
-float zogica_hitrost = 0.5; //Novo, da je po defaulu glede na hitrost zogice mode=easy (za ai)
+float zogica_hitrost = 1.8; //Novo, da je po defaulu glede na hitrost zogice mode=easy (za ai)
 
-float zogica_x = 160.0f;
-float zogica_y = 120.0f;
-float zogica_dx = 2.0f;
-float zogica_dy = 1.5f;
+float zogica_x = 160.0;
+float zogica_y = 120.0;
+float zogica_dx = 2.0;
+float zogica_dy = 1.5;
 
 //sredinska crtkana crta
 int razpolovisce = 90;
@@ -636,9 +636,9 @@ int main(void)
   	    	{while(HAL_GPIO_ReadPin(BTN_OK_GPIO_Port, BTN_OK_Pin) == GPIO_PIN_RESET){}
   	    	Title_screen_narisi();
 
-  	    	  	 if(izbrana_opcija== 6) zogica_hitrost = 0.5; //easy
-  	    	  	 else if(izbrana_opcija == 7) zogica_hitrost = 1.0; // medium
-  	    	  	 else if(izbrana_opcija == 8) zogica_hitrost = 3.0; // hard
+  	    	  	 if(izbrana_opcija== 6) zogica_hitrost = 1.8; //easy
+  	    	  	 else if(izbrana_opcija == 7) zogica_hitrost = 3.0; // medium
+  	    	  	 else if(izbrana_opcija == 8) zogica_hitrost = 4.0; // hard
 
   	    	//  	 Title_screen_narisi();
   	    	  	 meni_stanje = 1; // Gremo nazaj v podmeni
@@ -688,17 +688,21 @@ int main(void)
 			//ki se najhitreje spreminjata, zato je rezultat težko reproducirati
 
 			//omejitev x je lahko poljuben. Predznak x je + če je liha cifra, sicer -
-			zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*ticks_zadnja_stevka+1;
+			zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*ticks_zadnja_stevka;
 
 			// - za y uporabimo predzadnjo stevko
 			// - omejitev y mora biti več ko npr. 10% od x. Če bi bil y blizu 0% od x
 			//		bi lahko žogica vertikalno poletela in se ciklala
 			// - Predznak y je + če je večje od 5, sicer -
-			zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*ticks_predzadnja_stevka+1;
+			zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*ticks_predzadnja_stevka;
+
+			zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*(1+zogica_dx/50); //normiramo na območje 1-2
+			zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*(1+zogica_dy/50); //normiramo na območje 1-2
 
 			//če je prenizko: ohranimo predznak dy (ulomek) in upoštevamo spodnjo mejo 10% dx.
 			//if (zogica_dy<(zogica_dx/10))zogica_dy=(zogica_dy/abs(zogica_dy))*abs(zogica_dx)/10;
-			if(zogica_dy>4*zogica_dx)zogica_dy=2*zogica_dx;
+
+			//if(zogica_dy>4*zogica_dx)zogica_dy=2*zogica_dx;
 
 
 			//verjetno sem kaj pozabil, sprobaj pa javi :)
@@ -875,7 +879,7 @@ void zogica_narisi(void) {  // ta stvar mal čudn deluje
     }
 
     // Odboj od LEVE ploščice
-    if (zogica_x - zogica_size <= (paddle_x_leva + paddle_width + delta)) {
+    if (zogica_x - zogica_size/2 <= (paddle_x_leva + paddle_width + delta)) {
         if (zogica_y >= (paddle_y_leva - delta) && zogica_y <= (paddle_y_leva + paddle_height + delta)) {
             zogica_dx = -zogica_dx;
             zogica_x = (paddle_x_leva + paddle_width) + zogica_size + 1; // "Odlepi" žogico od ploščice
@@ -883,7 +887,7 @@ void zogica_narisi(void) {  // ta stvar mal čudn deluje
     }
 
     // Odboj od DESNE ploščice
-    if (zogica_x + zogica_size >= (paddle_x_desna - delta)) {
+    if (zogica_x + zogica_size/2 >= (paddle_x_desna - delta)) {
         if (zogica_y >= (paddle_y_desna - delta) && zogica_y <= (paddle_y_desna + paddle_height + delta)) {
             zogica_dx = -zogica_dx;
             zogica_x = paddle_x_desna - zogica_size - 1; // "Odlepi" žogico od ploščice
@@ -1050,17 +1054,23 @@ void povecaj_score(int igralec) {
 	//ki se najhitreje spreminjata, zato je rezultat težko reproducirati
 
 	//omejitev x je lahko poljuben. Predznak x je + če je liha cifra, sicer -
-	zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*ticks_zadnja_stevka+1;
+	zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*ticks_zadnja_stevka;
 
 	// - za y uporabimo predzadnjo stevko
 	// - omejitev y mora biti več ko npr. 10% od x. Če bi bil y blizu 0% od x
 	//		bi lahko žogica vertikalno poletela in se ciklala
 	// - Predznak y je + če je večje od 5, sicer -
-	zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*ticks_predzadnja_stevka+1;
+
+	zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*ticks_predzadnja_stevka;
+
+	zogica_dx=(-1+(2*(ticks_zadnja_stevka%2)))*(1+zogica_dx/50); //normiramo na območje 1-2
+	zogica_dy=(-1+(2*(ticks_predzadnja_stevka>5)))*(1+zogica_dy/50); //normiramo na območje 1-2
 
 	//če je prenizko: ohranimo predznak dy (ulomek) in upoštevamo spodnjo mejo 10% dx.
 	//if (zogica_dy<(zogica_dx/10))zogica_dy=(zogica_dy/abs(zogica_dy))*abs(zogica_dx)/10;
-	if(zogica_dy>4*zogica_dx)zogica_dy=2*zogica_dx;
+
+
+	//if(zogica_dy>3*zogica_dx)zogica_dy=2*zogica_dx;
 
 	//zogica_reset();
 
@@ -1079,8 +1089,8 @@ void score_reset(void) {
 		//zogica_reset();
 	}
 }
-//-----------------------------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------------------------
 void paddle_update(void)
 {
 
