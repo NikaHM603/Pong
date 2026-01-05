@@ -1122,6 +1122,7 @@ void paddle_update(void)
 	      	      // Preverimo še, če je žogica po Y med vrhom in dnom ploščice
 	      	      if (zogica_y >= paddle_y_leva && zogica_y <= (paddle_y_leva + paddle_height))
 	      	      {
+	      	    	  UG_FillCircle((int16_t)zogica_x, (int16_t)zogica_y, zogica_size, C_BLACK);
 	      	          zogica_dx = -zogica_dx;  // Obrni smer v desno
 	      	          zogica_x = (paddle_x_leva + paddle_width) + zogica_size; // Prepreči "zatikanje" žogice v ploščici
 	      	      }
@@ -1151,6 +1152,7 @@ void paddle_update(void)
 	      	      //Popravi_Ozadje_Pravokotnik(paddle_x_desna, old_y_desna, paddle_width, paddle_height); <-- To pride v poštev, ko bom mela sliko na ozadju med actual igro
 	      	      UG_FillFrame(paddle_x_desna, paddle_y_desna, paddle_x_desna + paddle_width - 1, paddle_y_desna + paddle_height - 1, C_WHITE);
 	      	  }
+		  }
 
 	      	  // ODBOJ OD D
 	      	  // Preverimo, če je žogica po X prišla do desne ploščice (x = 290)
@@ -1159,11 +1161,12 @@ void paddle_update(void)
 	      	      // Preverimo še, če je žogica po Y med vrhom in dnom ploščice
 	      	      if (zogica_y >= paddle_y_desna && zogica_y <= (paddle_y_desna + paddle_height))
 	      	      {
+	      	    	  UG_FillCircle((int16_t)zogica_x, (int16_t)zogica_y, zogica_size, C_BLACK);
 	      	          zogica_dx = -zogica_dx;  // Obrni smer v levo
 	      	          zogica_x = paddle_x_desna - zogica_size; // Prepreči "zatikanje"
 	      	      }
 	      	  }
-		  }
+		  //}
 }
 //-----------------------------------------------------------------------------------------------
 
